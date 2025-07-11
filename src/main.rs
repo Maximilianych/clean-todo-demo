@@ -1,5 +1,5 @@
 mod application;
-mod domen;
+mod domain;
 mod infrastructure;
 mod presentation;
 
