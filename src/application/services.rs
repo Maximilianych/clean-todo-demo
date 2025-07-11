@@ -1,6 +1,6 @@
 use crate::domain::{entities::{Task, TaskId}, repositories:: TaskRepository};
 
-struct TaskService {
+pub struct TaskService {
     task_repository: Box<dyn TaskRepository>,
     last_id: TaskId
 }
