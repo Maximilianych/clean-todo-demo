@@ -38,7 +38,7 @@ impl TaskService {
     }
 }
 
-enum TaskServiceError {
+pub enum TaskServiceError {
     MissingTitle,
     MissingDescription,
     TaskNotFound,
