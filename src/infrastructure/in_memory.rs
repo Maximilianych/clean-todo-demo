@@ -1,7 +1,7 @@
 use crate::domain::entities::{Task, TaskId};
 use crate::domain::repositories::{TaskRepository, RepositoryError};
 
-struct InMemoryTaskRepository {
+pub struct InMemoryTaskRepository {
     tasks: Vec<Task>,
 }
 
@@ -42,5 +42,11 @@ impl TaskRepository for InMemoryTaskRepository {
         } else {
             Err(RepositoryError::TaskNotFound)
         }
+    }
+}
+
+impl InMemoryTaskRepository {
+    pub fn new() -> InMemoryTaskRepository {
+        InMemoryTaskRepository { tasks: Vec::new() }
     }
 }
