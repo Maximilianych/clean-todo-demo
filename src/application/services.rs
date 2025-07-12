@@ -25,7 +25,8 @@ impl TaskService {
         if description.is_empty() {
             return Err(TaskServiceError::MissingDescription);
         }
-        let task = Task { id: 0, title, description, status: false };
+        let task = Task { id: self.last_id, title, description, status: false };
+        self.last_id += 1;
         self.task_repository.create(task).map_err(|_| TaskServiceError::TaskAlreadyExists)
     }
 
