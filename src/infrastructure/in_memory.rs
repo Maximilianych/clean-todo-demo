@@ -19,7 +19,7 @@ impl TaskRepository for InMemoryTaskRepository {
     }
 
     fn create(&mut self, task: Task) -> Result<(), RepositoryError> {
-        if self.tasks.iter().any(|task| task.id == task.id) {
+        if self.tasks.iter().any(|t| t.id == task.id) {
             return Err(RepositoryError::TaskAlreadyExists);
         }
         self.tasks.push(task);
@@ -27,7 +27,7 @@ impl TaskRepository for InMemoryTaskRepository {
     }
 
     fn delete(&mut self, id: TaskId) -> Result<(), RepositoryError> {
-        if let Some(index) = self.tasks.iter().position(|task| task.id == id) {
+        if let Some(index) = self.tasks.iter().position(|t| t.id == id) {
             self.tasks.remove(index);
             Ok(())
         } else {
@@ -36,7 +36,7 @@ impl TaskRepository for InMemoryTaskRepository {
     }
 
     fn toggle(&mut self, id: TaskId) -> Result<(), RepositoryError> {
-        if let Some(task) = self.tasks.iter_mut().find(|task| task.id == id) {
+        if let Some(task) = self.tasks.iter_mut().find(|t| t.id == id) {
             task.status = !task.status;
             Ok(())
         } else {
