@@ -6,10 +6,10 @@ pub trait TaskRepository: Send + Sync {
     fn create(&mut self, task: Task) -> Result<(), RepositoryError>;
     fn delete(&mut self, id: TaskId) -> Result<(), RepositoryError>;
     fn toggle(&mut self, id: TaskId) -> Result<(), RepositoryError>;
+    fn next_id(&mut self) -> TaskId;
 }
 
 pub enum RepositoryError {
     TaskNotFound,
-    TaskAlreadyExists,
-    TaskIdNotFound,
+    TaskAlreadyExists
 }

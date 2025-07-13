@@ -2,12 +2,11 @@ use crate::domain::{entities::{Task, TaskId}, repositories:: TaskRepository};
 
 pub struct TaskService {
     task_repository: Box<dyn TaskRepository>,
-    last_id: TaskId
 }
 
 impl TaskService {
     pub fn new(task_repository: Box<dyn TaskRepository>) -> TaskService {
-        TaskService { task_repository, last_id: 0 }
+        TaskService { task_repository }
     }
 
     pub fn get_all(&self) -> Vec<Task> {
@@ -25,8 +24,8 @@ impl TaskService {
         if description.is_empty() {
             return Err(TaskServiceError::MissingDescription);
         }
-        let task = Task { id: self.last_id, title, description, status: false };
-        self.last_id += 1;
+        let id = self.task_repository.next_id();
+        let task = Task { id, title, description, status: false };
         self.task_repository.create(task).map_err(|_| TaskServiceError::TaskAlreadyExists)
     }
 

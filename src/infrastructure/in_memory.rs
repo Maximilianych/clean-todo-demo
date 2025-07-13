@@ -3,9 +3,21 @@ use crate::domain::repositories::{TaskRepository, RepositoryError};
 
 pub struct InMemoryTaskRepository {
     tasks: Vec<Task>,
+    last_id: TaskId,
+}
+
+impl InMemoryTaskRepository {
+    pub fn new() -> InMemoryTaskRepository {
+        InMemoryTaskRepository { tasks: Vec::new(), last_id: 0 }
+    }
 }
 
 impl TaskRepository for InMemoryTaskRepository {
+    fn next_id(&mut self) -> TaskId {
+        self.last_id += 1;
+        self.last_id
+    }
+
     fn get_all(&self) -> Vec<Task> {
         self.tasks.clone()
     }
@@ -15,7 +27,7 @@ impl TaskRepository for InMemoryTaskRepository {
             .iter()
             .find(|task| task.id == id)
             .cloned()
-            .ok_or(RepositoryError::TaskIdNotFound)
+            .ok_or(RepositoryError::TaskNotFound)
     }
 
     fn create(&mut self, task: Task) -> Result<(), RepositoryError> {
@@ -42,11 +54,5 @@ impl TaskRepository for InMemoryTaskRepository {
         } else {
             Err(RepositoryError::TaskNotFound)
         }
-    }
-}
-
-impl InMemoryTaskRepository {
-    pub fn new() -> InMemoryTaskRepository {
-        InMemoryTaskRepository { tasks: Vec::new() }
     }
 }
