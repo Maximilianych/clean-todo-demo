@@ -1,6 +1,6 @@
 use std::sync::Mutex;
 
-use actix_web::{get, web, HttpResponse, Responder};
+use actix_web::{delete, get, patch, post, web, HttpResponse, Responder};
 
 use crate::application::services::{TaskService, TaskServiceError};
 
@@ -38,7 +38,7 @@ struct TaskDetails {
     description: String,
 }
 
-#[get("/create_task")]
+#[post("/tasks")]
 pub async fn create_task(task_service: web::Data<Mutex<TaskService>>, task_details: web::Query<TaskDetails>) -> impl Responder {
     println!("create_task title: {}, description: {}", task_details.title, task_details.description);
     match task_service.lock().unwrap().create(task_details.title.to_string(), task_details.description.to_string()) {
@@ -68,7 +68,7 @@ pub async fn create_task(task_service: web::Data<Mutex<TaskService>>, task_detai
     }
 }
 
-#[get("/toggle_task/{id}")]
+#[patch("/tasks/{id}")]
 pub async fn toggle_task(task_service: web::Data<Mutex<TaskService>>, id: web::Path<u32>) -> impl Responder {
     println!("toggle_task/{id}");
     match task_service.lock().unwrap().toggle(*id) {
@@ -83,7 +83,7 @@ pub async fn toggle_task(task_service: web::Data<Mutex<TaskService>>, id: web::P
     }
 }
 
-#[get("/delete_task/{id}")]
+#[delete("/tasks/{id}")]
 pub async fn delete_task(task_service: web::Data<Mutex<TaskService>>, id: web::Path<u32>) -> impl Responder {
     println!("delete_task/{id}");
     match task_service.lock().unwrap().delete(*id) {
