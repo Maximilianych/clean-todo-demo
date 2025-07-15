@@ -1,5 +1,6 @@
 use crate::domain::entities::{Task, TaskId};
 
+#[mockall::automock]
 pub trait TaskRepository: Send + Sync {
     fn get_all(&self) -> Vec<Task>;
     fn get_by_id(&self, id: TaskId) -> Result<Task, RepositoryError>;
