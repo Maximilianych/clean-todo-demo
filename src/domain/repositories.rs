@@ -9,6 +9,7 @@ pub trait TaskRepository: Send + Sync {
     fn next_id(&mut self) -> TaskId;
 }
 
+#[derive(Debug)]
 pub enum RepositoryError {
     TaskNotFound,
     TaskAlreadyExists
