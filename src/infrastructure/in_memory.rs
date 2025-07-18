@@ -148,11 +148,11 @@ mod in_memory_task_repository_tests {
 
         repo.toggle(1).await.unwrap();
         let toggled_task = repo.get_by_id(1).await.unwrap();
-        assert!(toggled_task.status); // Статус должен стать true
+        assert!(toggled_task.status);
 
         repo.toggle(1).await.unwrap();
         let toggled_back_task = repo.get_by_id(1).await.unwrap();
-        assert!(!toggled_back_task.status); // Статус должен вернуться к false
+        assert!(!toggled_back_task.status);
     }
 
     #[tokio::test]
