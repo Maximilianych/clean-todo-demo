@@ -1,4 +1,4 @@
-use crate::domain::{entities::{Task, TaskId}, repositories:: TaskRepository};
+use crate::domain::{entities::{Task, TaskId}, repositories::{RepositoryError,  TaskRepository}};
 
 pub struct TaskService {
     task_repository: Box<dyn TaskRepository>,
@@ -14,7 +14,11 @@ impl TaskService {
     }
 
     pub async fn get_by_id(&self, id: TaskId) -> Result<Task, TaskServiceError> {
-        self.task_repository.get_by_id(id).await.map_err(|_| TaskServiceError::TaskNotFound)
+        self.task_repository.get_by_id(id).await.map_err(|e| 
+            match e {
+                RepositoryError::TaskNotFound => TaskServiceError::TaskNotFound,
+                _ => TaskServiceError::UnexpectedError
+            })
     }
 
     pub async fn create(&mut self, title: String, description: String) -> Result<(), TaskServiceError> {
@@ -26,15 +30,28 @@ impl TaskService {
         }
         let id = self.task_repository.next_id().await;
         let task = Task { id, title, description, status: false };
-        self.task_repository.create(task).await.map_err(|_| TaskServiceError::TaskAlreadyExists)
+        self.task_repository.create(task).await.map_err(|e|
+            match e {
+                RepositoryError::TaskAlreadyExists => TaskServiceError::TaskAlreadyExists,
+                _ => TaskServiceError::UnexpectedError
+            })
     }
 
     pub async fn delete(&mut self, id: TaskId) -> Result<(), TaskServiceError> {
-        self.task_repository.delete(id).await.map_err(|_| TaskServiceError::TaskNotFound)
+        self.task_repository.delete(id).await.map_err(|e| 
+            match e {
+                RepositoryError::TaskNotFound => TaskServiceError::TaskNotFound,
+                _ => TaskServiceError::UnexpectedError
+            })
     }
 
     pub async fn toggle(&mut self, id: TaskId) -> Result<(), TaskServiceError> {
-        self.task_repository.toggle(id).await.map_err(|_| TaskServiceError::TaskNotFound)
+        self.task_repository.toggle(id).await.map_err(|e| 
+            match e {
+                RepositoryError::TaskNotFound => TaskServiceError::TaskNotFound,
+                _ => TaskServiceError::UnexpectedError
+            }
+        )
     }
 }
 
@@ -43,7 +60,8 @@ pub enum TaskServiceError {
     MissingTitle,
     MissingDescription,
     TaskNotFound,
-    TaskAlreadyExists
+    TaskAlreadyExists,
+    UnexpectedError
 }
 
 // Проверяем работу сервиса, используя mockall для имитации поведения TaskRepository

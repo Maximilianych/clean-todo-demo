@@ -57,6 +57,11 @@ impl From<TaskServiceError> for HttpResponse {
                 code: "conflict".to_string(),
                 message: "Task already exists".to_string(),
                 details: None,
+            },
+            TaskServiceError::UnexpectedError => ApiErrorResponse {
+                code: "unexpected_error".to_string(),
+                message: "An unexpected error occurred".to_string(),
+                details: None,
             }
         };
 
@@ -69,6 +74,9 @@ impl From<TaskServiceError> for HttpResponse {
             },
             TaskServiceError::TaskAlreadyExists => {
                 HttpResponse::Conflict().json(response)
+            },
+            TaskServiceError::UnexpectedError => {
+                HttpResponse::InternalServerError().json(response)
             }
         }
     }
