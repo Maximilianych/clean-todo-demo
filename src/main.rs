@@ -9,6 +9,8 @@ use actix_web::{App, HttpServer, web};
 
 #[actix_web::main]
 async fn main() {
+    dotenv::dotenv().ok();
+    
     let task_service = application::services::TaskService::new(Box::new(
         infrastructure::in_memory::InMemoryTaskRepository::new(),
     ));
