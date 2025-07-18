@@ -67,7 +67,12 @@ impl TaskRepository for SqliteTaskRepository {
         .await
         .map_err(|e| {
             eprintln!("Ошибка при создании задачи: {:?}", e);
-            RepositoryError::InternalError
+            match e {
+                sqlx::Error::Database(e) if e.code().unwrap_or_default() == "1555" => {
+                    RepositoryError::TaskAlreadyExists
+                }
+                _ => RepositoryError::InternalError,
+            }
         })?;
         Ok(())
     }
@@ -204,7 +209,7 @@ mod sqlite_task_repository_tests {
         };
         repo.create(task.clone()).await.unwrap();
         let result = repo.create(task.clone()).await;
-        assert!(matches!(result, Err(RepositoryError::InternalError)));
+        assert!(matches!(result, Err(RepositoryError::TaskAlreadyExists)));
     }
 
     #[tokio::test]
