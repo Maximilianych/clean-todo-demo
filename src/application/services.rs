@@ -9,32 +9,32 @@ impl TaskService {
         TaskService { task_repository }
     }
 
-    pub fn get_all(&self) -> Vec<Task> {
-        self.task_repository.get_all()
+    pub async fn get_all(&self) -> Vec<Task> {
+        self.task_repository.get_all().await
     }
 
-    pub fn get_by_id(&self, id: TaskId) -> Result<Task, TaskServiceError> {
-        self.task_repository.get_by_id(id).map_err(|_| TaskServiceError::TaskNotFound)
+    pub async fn get_by_id(&self, id: TaskId) -> Result<Task, TaskServiceError> {
+        self.task_repository.get_by_id(id).await.map_err(|_| TaskServiceError::TaskNotFound)
     }
 
-    pub fn create(&mut self, title: String, description: String) -> Result<(), TaskServiceError> {
+    pub async fn create(&mut self, title: String, description: String) -> Result<(), TaskServiceError> {
         if title.is_empty() {
             return Err(TaskServiceError::MissingTitle);
         }
         if description.is_empty() {
             return Err(TaskServiceError::MissingDescription);
         }
-        let id = self.task_repository.next_id();
+        let id = self.task_repository.next_id().await;
         let task = Task { id, title, description, status: false };
-        self.task_repository.create(task).map_err(|_| TaskServiceError::TaskAlreadyExists)
+        self.task_repository.create(task).await.map_err(|_| TaskServiceError::TaskAlreadyExists)
     }
 
-    pub fn delete(&mut self, id: TaskId) -> Result<(), TaskServiceError> {
-        self.task_repository.delete(id).map_err(|_| TaskServiceError::TaskNotFound)
+    pub async fn delete(&mut self, id: TaskId) -> Result<(), TaskServiceError> {
+        self.task_repository.delete(id).await.map_err(|_| TaskServiceError::TaskNotFound)
     }
 
-    pub fn toggle(&mut self, id: TaskId) -> Result<(), TaskServiceError> {
-        self.task_repository.toggle(id).map_err(|_| TaskServiceError::TaskNotFound)
+    pub async fn toggle(&mut self, id: TaskId) -> Result<(), TaskServiceError> {
+        self.task_repository.toggle(id).await.map_err(|_| TaskServiceError::TaskNotFound)
     }
 }
 
@@ -54,19 +54,19 @@ mod task_service_tests {
     use crate::domain::repositories::{MockTaskRepository, RepositoryError};
     use mockall::predicate::*;
 
-    #[test]
-    fn get_all_tasks_returns_empty_vec_if_no_tasks() {
+    #[tokio::test]
+    async fn get_all_tasks_returns_empty_vec_if_no_tasks() {
         // Проверяем, что get_all возвращает пустой вектор, если задач нет
         let mut mock_repo = MockTaskRepository::new();
         mock_repo.expect_get_all().times(1).returning(|| vec![]);
 
         let service = TaskService::new(Box::new(mock_repo));
-        let tasks = service.get_all();
+        let tasks = service.get_all().await;
         assert!(tasks.is_empty());
     }
 
-    #[test]
-    fn get_all_tasks_returns_all_tasks() {
+    #[tokio::test]
+    async fn get_all_tasks_returns_all_tasks() {
         // Проверяем, что get_all возвращает все задачи
         let mut mock_repo = MockTaskRepository::new();
         let task1 = Task { id: 1, title: "T1".to_string(), description: "D1".to_string(), status: false };
@@ -74,14 +74,14 @@ mod task_service_tests {
         mock_repo.expect_get_all().times(1).returning(move || vec![task1.clone(), task2.clone()]);
 
         let service = TaskService::new(Box::new(mock_repo));
-        let tasks = service.get_all();
+        let tasks = service.get_all().await;
         assert_eq!(tasks.len(), 2);
         assert_eq!(tasks[0].id, 1);
         assert_eq!(tasks[1].id, 2);
     }
 
-    #[test]
-    fn get_by_id_returns_task_if_found() {
+    #[tokio::test]
+    async fn get_by_id_returns_task_if_found() {
         // Проверяем, что get_by_id возвращает задачу, если она найдена
         let mut mock_repo = MockTaskRepository::new();
         mock_repo.expect_get_by_id()
@@ -90,13 +90,13 @@ mod task_service_tests {
             .returning(move |id| Ok(Task { id, title: "Test".to_string(), description: "Desc".to_string(), status: false }));
 
         let service = TaskService::new(Box::new(mock_repo));
-        let result = service.get_by_id(1);
+        let result = service.get_by_id(1).await;
         assert!(result.is_ok());
         assert_eq!(result.unwrap().id, 1);
     }
 
-    #[test]
-    fn get_by_id_returns_error_if_not_found() {
+    #[tokio::test]
+    async fn get_by_id_returns_error_if_not_found() {
         // Проверяем, что get_by_id возвращает ошибку, если задача не найдена
         let mut mock_repo = MockTaskRepository::new();
         mock_repo.expect_get_by_id()
@@ -105,12 +105,12 @@ mod task_service_tests {
             .returning(|_| Err(RepositoryError::TaskNotFound));
 
         let service = TaskService::new(Box::new(mock_repo));
-        let result = service.get_by_id(99);
+        let result = service.get_by_id(99).await;
         assert!(matches!(result, Err(TaskServiceError::TaskNotFound)));
     }
 
-    #[test]
-    fn create_task_success() {
+    #[tokio::test]
+    async fn create_task_success() {
         // Проверяем успешное создание задачи
         let mut mock_repo = MockTaskRepository::new();
         mock_repo.expect_next_id().times(1).returning(|| 1);
@@ -120,30 +120,30 @@ mod task_service_tests {
             .returning(|_| Ok(()));
 
         let mut service = TaskService::new(Box::new(mock_repo));
-        let result = service.create("New Task".to_string(), "New Description".to_string());
+        let result = service.create("New Task".to_string(), "New Description".to_string()).await;
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn create_task_missing_title() {
+    #[tokio::test]
+    async fn create_task_missing_title() {
         // Проверяем создание задачи с отсутствующим заголовком
         let mock_repo = MockTaskRepository::new(); // Mock не будет использоваться, но нужен для создания сервиса
         let mut service = TaskService::new(Box::new(mock_repo));
-        let result = service.create("".to_string(), "Description".to_string());
+        let result = service.create("".to_string(), "Description".to_string()).await;
         assert!(matches!(result, Err(TaskServiceError::MissingTitle)));
     }
 
-    #[test]
-    fn create_task_missing_description() {
+    #[tokio::test]
+    async fn create_task_missing_description() {
         // Проверяем создание задачи с отсутствующим описанием
         let mock_repo = MockTaskRepository::new(); // Mock не будет использоваться
         let mut service = TaskService::new(Box::new(mock_repo));
-        let result = service.create("Title".to_string(), "".to_string());
+        let result = service.create("Title".to_string(), "".to_string()).await;
         assert!(matches!(result, Err(TaskServiceError::MissingDescription)));
     }
 
-    #[test]
-    fn create_task_already_exists() {
+    #[tokio::test]
+    async fn create_task_already_exists() {
         // Проверяем создание задачи, которая уже существует (по ID)
         let mut mock_repo = MockTaskRepository::new();
         mock_repo.expect_next_id().times(1).returning(|| 1);
@@ -152,12 +152,12 @@ mod task_service_tests {
             .returning(|_| Err(RepositoryError::TaskAlreadyExists));
 
         let mut service = TaskService::new(Box::new(mock_repo));
-        let result = service.create("Existing Task".to_string(), "Description".to_string());
+        let result = service.create("Existing Task".to_string(), "Description".to_string()).await;
         assert!(matches!(result, Err(TaskServiceError::TaskAlreadyExists)));
     }
 
-    #[test]
-    fn delete_task_success() {
+    #[tokio::test]
+    async fn delete_task_success() {
         // Проверяем успешное удаление задачи
         let mut mock_repo = MockTaskRepository::new();
         mock_repo.expect_delete()
@@ -166,12 +166,12 @@ mod task_service_tests {
             .returning(|_| Ok(()));
 
         let mut service = TaskService::new(Box::new(mock_repo));
-        let result = service.delete(1);
+        let result = service.delete(1).await;
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn delete_task_not_found() {
+    #[tokio::test]
+    async fn delete_task_not_found() {
         // Проверяем удаление несуществующей задачи
         let mut mock_repo = MockTaskRepository::new();
         mock_repo.expect_delete()
@@ -180,12 +180,12 @@ mod task_service_tests {
             .returning(|_| Err(RepositoryError::TaskNotFound));
 
         let mut service = TaskService::new(Box::new(mock_repo));
-        let result = service.delete(99);
+        let result = service.delete(99).await;
         assert!(matches!(result, Err(TaskServiceError::TaskNotFound)));
     }
 
-    #[test]
-    fn toggle_task_success() {
+    #[tokio::test]
+    async fn toggle_task_success() {
         // Проверяем успешное переключение статуса задачи
         let mut mock_repo = MockTaskRepository::new();
         mock_repo.expect_toggle()
@@ -194,12 +194,12 @@ mod task_service_tests {
             .returning(|_| Ok(()));
 
         let mut service = TaskService::new(Box::new(mock_repo));
-        let result = service.toggle(1);
+        let result = service.toggle(1).await;
         assert!(result.is_ok());
     }
 
-    #[test]
-    fn toggle_task_not_found() {
+    #[tokio::test]
+    async fn toggle_task_not_found() {
         // Проверяем переключение статуса несуществующей задачи
         let mut mock_repo = MockTaskRepository::new();
         mock_repo.expect_toggle()
@@ -208,7 +208,7 @@ mod task_service_tests {
             .returning(|_| Err(RepositoryError::TaskNotFound));
 
         let mut service = TaskService::new(Box::new(mock_repo));
-        let result = service.toggle(99);
+        let result = service.toggle(99).await;
         assert!(matches!(result, Err(TaskServiceError::TaskNotFound)));
     }
 }
