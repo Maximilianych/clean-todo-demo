@@ -5,7 +5,7 @@ use crate::domain::{
     repositories::{RepositoryError, TaskRepository},
 };
 
-struct SqliteTaskRepository {
+pub struct SqliteTaskRepository {
     pool: SqlitePool,
     next_id: TaskId,
 }
