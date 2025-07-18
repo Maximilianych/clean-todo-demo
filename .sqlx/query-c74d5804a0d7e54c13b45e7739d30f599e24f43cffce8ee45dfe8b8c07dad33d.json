@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT MAX(id) as max_id FROM tasks",
+  "describe": {
+    "columns": [
+      {
+        "name": "max_id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "c74d5804a0d7e54c13b45e7739d30f599e24f43cffce8ee45dfe8b8c07dad33d"
+}

@@ -1,6 +1,6 @@
 use actix_web::HttpResponse;
 
-use crate::{application::services::TaskServiceError, domain::entities::Task};
+use crate::{application::services::TaskServiceError, domain::entities::{Task, TaskId}};
 
 #[derive(serde::Deserialize)]
 pub struct CreateTaskRequest {
@@ -10,7 +10,7 @@ pub struct CreateTaskRequest {
 
 #[derive(serde::Serialize)]
 pub struct TaskResponse {
-    pub id: u32,
+    pub id: TaskId,
     pub title: String,
     pub description: String,
     pub status: bool,

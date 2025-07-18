@@ -3,6 +3,7 @@ use std::sync::Mutex;
 use actix_web::{HttpResponse, Responder, delete, get, patch, post, web};
 
 use crate::application::services::TaskService;
+use crate::domain::entities::TaskId;
 use crate::presentation::dto::{CreateTaskRequest, TaskResponse};
 
 #[get("/tasks")]
@@ -16,7 +17,7 @@ pub async fn get_all_tasks(task_service: web::Data<Mutex<TaskService>>) -> impl 
 #[get("/task/{id}")]
 pub async fn get_task_by_id(
     task_service: web::Data<Mutex<TaskService>>,
-    id: web::Path<u32>,
+    id: web::Path<TaskId>,
 ) -> impl Responder {
     println!("get_task_by_id/{id}");
     match task_service.lock().unwrap().get_by_id(*id).await {
@@ -60,7 +61,7 @@ pub async fn create_task(
 #[patch("/tasks/{id}")]
 pub async fn toggle_task(
     task_service: web::Data<Mutex<TaskService>>,
-    id: web::Path<u32>,
+    id: web::Path<TaskId>,
 ) -> impl Responder {
     println!("toggle_task/{id}");
     match task_service.lock().unwrap().toggle(*id).await {
@@ -78,7 +79,7 @@ pub async fn toggle_task(
 #[delete("/tasks/{id}")]
 pub async fn delete_task(
     task_service: web::Data<Mutex<TaskService>>,
-    id: web::Path<u32>,
+    id: web::Path<TaskId>,
 ) -> impl Responder {
     println!("delete_task/{id}");
     match task_service.lock().unwrap().delete(*id).await {
