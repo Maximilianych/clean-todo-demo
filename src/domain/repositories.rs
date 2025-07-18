@@ -14,5 +14,6 @@ pub trait TaskRepository: Send + Sync {
 #[derive(Debug)]
 pub enum RepositoryError {
     TaskNotFound,
-    TaskAlreadyExists
+    TaskAlreadyExists,
+    InternalError
 }

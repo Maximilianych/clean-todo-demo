@@ -39,24 +39,64 @@ impl TaskRepository for SqliteTaskRepository {
             .fetch_all(&self.pool)
             .await
             .unwrap_or_else(|e| {
+                eprintln!("Ошибка при получении всех задач: {:?}", e);
                 Vec::new()
             })
     }
 
     async fn get_by_id(&self, id: TaskId) -> Result<Task, RepositoryError> {
-        todo!()
+        let task = sqlx::query_as!(Task, r#"SELECT id as "id!", title as "title!", description as "description!", status as "status!" FROM tasks WHERE id = ?"#, id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| {
+                eprintln!("Ошибка при получении задачи по ID: {:?}", e);
+                RepositoryError::InternalError
+            })?;
+        task.ok_or(RepositoryError::TaskNotFound)
     }
 
     async fn create(&mut self, task: Task) -> Result<(), RepositoryError> {
-        todo!()
+        sqlx::query!(r#"INSERT INTO tasks (id, title, description, status) VALUES (?, ?, ?, ?)"#, task.id, task.title, task.description, task.status)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| {
+                eprintln!("Ошибка при создании задачи: {:?}", e);
+                RepositoryError::InternalError
+            })?;
+        Ok(())
     }
 
     async fn delete(&mut self, id: TaskId) -> Result<(), RepositoryError> {
-        todo!()
+        let affected_rows = sqlx::query!(r#"DELETE FROM tasks WHERE id = ?"#, id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| {
+                eprintln!("Ошибка при удалении задачи: {:?}", e);
+                RepositoryError::InternalError
+            })?
+            .rows_affected();
+
+        if affected_rows == 0 {
+            Err(RepositoryError::TaskNotFound)
+        } else {
+            Ok(())
+        }
     }
 
     async fn toggle(&mut self, id: TaskId) -> Result<(), RepositoryError> {
-        todo!()
+        let affected_rows = sqlx::query!(r#"UPDATE tasks SET status = NOT status WHERE id = ?"#, id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| {
+                eprintln!("Ошибка при переключении статуса задачи: {:?}", e);
+                RepositoryError::InternalError
+            })?
+            .rows_affected();
+
+        if affected_rows == 0 {
+            Err(RepositoryError::TaskNotFound)
+        } else {
+            Ok(())
+        }
     }
 }
-
