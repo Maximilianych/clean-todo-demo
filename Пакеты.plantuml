@@ -1,0 +1,47 @@
+skinparam linetype ortho
+
+package Domain {
+    class Task {
+    }
+
+    interface TaskRepository {
+    }
+
+    enum RepositoryError {
+    }
+}
+
+package Application {
+    class TaskService {
+    }
+
+    enum TaskServiceError {
+    }
+}
+
+package Infrastructure {
+    class InMemoryTaskRepository {
+    }
+
+    class SqliteTaskRepository {
+    }
+}
+
+package Presentation {
+    class CreateTaskRequest {
+    }
+
+    class TaskResponse {
+    }
+
+    class ApiErrorResponse {
+    }
+
+    class WebController {
+    }
+}
+
+Domain <-- Application
+Application <-- Presentation
+Domain <-right- Infrastructure
+Presentation ..> Domain

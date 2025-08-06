@@ -1,0 +1,98 @@
+    together {
+        class Task {
+            +id: TaskId
+            +title: String
+            +description: String
+            +status: bool
+        }
+
+        interface TaskRepository {
+            +get_all() -> Vec<Task>
+            +get_by_id(id: TaskId) -> Result<Task, RepositoryError>
+            +create(task: Task) -> Result<(), RepositoryError>
+            +delete(id: TaskId) -> Result<(), RepositoryError>
+            +toggle(id: TaskId) -> Result<(), RepositoryError>
+            +next_id() -> TaskId
+        }
+
+        enum RepositoryError {
+            TaskNotFound
+            TaskAlreadyExists
+            InternalError
+        }
+    }
+
+    together {
+        class TaskService {
+            -task_repository: Box<dyn Domain::TaskRepository>
+            +new(task_repository: Box<dyn Domain::TaskRepository>) -> TaskService
+            +get_all() -> Vec<Domain::Task>
+            +get_by_id(id: TaskId) -> Result<Domain::Task, TaskServiceError>
+            +create(title: String, description: String) -> Result<(), TaskServiceError>
+            +delete(id: TaskId) -> Result<(), TaskServiceError>
+            +toggle(id: TaskId) -> Result<(), TaskServiceError>
+        }
+
+        enum TaskServiceError {
+            MissingTitle
+            MissingDescription
+            TaskNotFound
+            TaskAlreadyExists
+            UnexpectedError
+        }
+    }
+
+    together {
+        class InMemoryTaskRepository {
+            -tasks: Vec<Domain::Task>
+            -last_id: TaskId
+            +new() -> InMemoryTaskRepository
+        }
+
+        class SqliteTaskRepository {
+            -pool: SqlitePool
+            -next_id: TaskId
+            +new(pool: SqlitePool) -> SqliteTaskRepository
+        }
+    }
+
+    together {
+        class CreateTaskRequest {
+            +title: String
+            +description: String
+        }
+
+        class TaskResponse {
+            +id: TaskId
+            +title: String
+            +description: String
+            +status: bool
+        }
+
+        class ApiErrorResponse {
+            +code: String
+            +message: String
+            +details: Option<Value>
+        }
+
+        class WebController {
+            +get_all_tasks(task_service: Data<Mutex<Application::TaskService>>) -> impl Responder
+            +get_task_by_id(task_service: Data<Mutex<Application::TaskService>>, id: Path<TaskId>) -> impl Responder
+            +create_task(task_service: Data<Mutex<Application::TaskService>>, request: Json<CreateTaskRequest>) -> impl Responder
+            +toggle_task(task_service: Data<Mutex<Application::TaskService>>, id: Path<TaskId>) -> impl Responder
+            +delete_task(task_service: Data<Mutex<Application::TaskService>>, id: Path<TaskId>) -> impl Responder
+        }
+    }
+
+    Task <-- TaskService
+    TaskService --o TaskRepository
+    TaskRepository --> RepositoryError
+    TaskServiceError <-- TaskService
+    InMemoryTaskRepository ..|> TaskRepository
+    SqliteTaskRepository ..|> TaskRepository
+    WebController --> TaskService
+    WebController --> CreateTaskRequest
+    WebController --> TaskResponse
+    WebController --> ApiErrorResponse
+    TaskResponse ..> Task
+    ApiErrorResponse ..> TaskServiceError
