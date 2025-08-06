@@ -2,8 +2,8 @@ use crate::domain::entities::{Task, TaskId};
 use crate::domain::repositories::{TaskRepository, RepositoryError};
 
 pub struct InMemoryTaskRepository {
-    tasks: Vec<Task>,
-    last_id: TaskId,
+    tasks: Vec<Task>, // Вектор задач
+    last_id: TaskId, // Последний ID
 }
 
 impl InMemoryTaskRepository {

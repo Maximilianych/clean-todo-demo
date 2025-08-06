@@ -27,7 +27,7 @@ pub async fn get_task_by_id(
             HttpResponse::Ok().body(serde_json::to_string_pretty(&response).unwrap())
         }
         Err(e) => {
-            println!("Task not found");
+            eprintln!("Task not found");
             HttpResponse::from(e)
         }
     }
@@ -52,7 +52,7 @@ pub async fn create_task(
             HttpResponse::Ok().json("Task created")
         }
         Err(e) => {
-            println!("Error creating task");
+            eprintln!("Error creating task");
             HttpResponse::from(e)
         }
     }
@@ -70,7 +70,7 @@ pub async fn toggle_task(
             HttpResponse::Ok().json("Task toggled")
         }
         Err(e) => {
-            println!("Task not found");
+            eprintln!("Task not found");
             HttpResponse::from(e)
         }
     }
@@ -88,7 +88,7 @@ pub async fn delete_task(
             HttpResponse::Ok().json("Task deleted")
         }
         Err(e) => {
-            println!("Task not found");
+            eprintln!("Task not found");
             HttpResponse::from(e)
         }
     }

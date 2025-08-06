@@ -4,16 +4,16 @@ use crate::{application::services::TaskServiceError, domain::entities::{Task, Ta
 
 #[derive(serde::Deserialize)]
 pub struct CreateTaskRequest {
-    pub title: String,
-    pub description: String,
+    pub title: String, // Название задачи
+    pub description: String, // Описание задачи
 }
 
 #[derive(serde::Serialize)]
 pub struct TaskResponse {
-    pub id: TaskId,
-    pub title: String,
-    pub description: String,
-    pub status: bool,
+    pub id: TaskId, // Идентификатор задачи
+    pub title: String, // Название задачи
+    pub description: String, // Описание задачи
+    pub status: bool, // Статус задачи
 }
 
 impl From<Task> for TaskResponse {
@@ -29,10 +29,10 @@ impl From<Task> for TaskResponse {
 
 #[derive(serde::Serialize)]
 pub struct ApiErrorResponse {
-    pub code: String,
-    pub message: String,
+    pub code: String, // Код ошибки
+    pub message: String, // Сообщение об ошибке
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub details: Option<serde_json::Value>,
+    pub details: Option<serde_json::Value>, // Дополнительные детали об ошибке
 }
 
 impl From<TaskServiceError> for HttpResponse {

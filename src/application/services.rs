@@ -1,18 +1,20 @@
 use crate::domain::{entities::{Task, TaskId}, repositories::{RepositoryError,  TaskRepository}};
 
 pub struct TaskService {
-    task_repository: Box<dyn TaskRepository>,
+    task_repository: Box<dyn TaskRepository>, // Динамический тип репозитория
 }
 
 impl TaskService {
+    // Конструктор
     pub fn new(task_repository: Box<dyn TaskRepository>) -> TaskService {
         TaskService { task_repository }
     }
-
+    // Методы
+    // Возвращает все задачи
     pub async fn get_all(&self) -> Vec<Task> {
         self.task_repository.get_all().await
     }
-
+    // Возвращает задачу по ID
     pub async fn get_by_id(&self, id: TaskId) -> Result<Task, TaskServiceError> {
         self.task_repository.get_by_id(id).await.map_err(|e| 
             match e {
@@ -20,7 +22,7 @@ impl TaskService {
                 _ => TaskServiceError::UnexpectedError
             })
     }
-
+    // Создает новую задачу
     pub async fn create(&mut self, title: String, description: String) -> Result<(), TaskServiceError> {
         if title.is_empty() {
             return Err(TaskServiceError::MissingTitle);
@@ -57,11 +59,11 @@ impl TaskService {
 
 #[derive(Debug)]
 pub enum TaskServiceError {
-    MissingTitle,
-    MissingDescription,
-    TaskNotFound,
-    TaskAlreadyExists,
-    UnexpectedError
+    MissingTitle, // Отсутствует заголовок
+    MissingDescription, // Отсутствует описание
+    TaskNotFound, // Задача не найдена
+    TaskAlreadyExists, // Задача уже существует
+    UnexpectedError // Непредвиденная ошибка
 }
 
 // Проверяем работу сервиса, используя mockall для имитации поведения TaskRepository

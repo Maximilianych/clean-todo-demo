@@ -7,7 +7,7 @@ use crate::domain::{
 
 pub struct SqliteTaskRepository {
     pool: SqlitePool,
-    next_id: TaskId,
+    last_id: TaskId,
 }
 
 impl SqliteTaskRepository {
@@ -22,46 +22,27 @@ impl SqliteTaskRepository {
 
         SqliteTaskRepository {
             pool,
-            next_id: id as TaskId,
+            last_id: id,
         }
     }
 }
 
 #[async_trait::async_trait]
 impl TaskRepository for SqliteTaskRepository {
-    async fn next_id(&mut self) -> TaskId {
-        self.next_id += 1;
-        self.next_id
-    }
-
     async fn get_all(&self) -> Vec<Task> {
         sqlx::query_as!(Task, r#"SELECT id as "id!", title as "title!", description as "description!", status as "status!" FROM tasks"#)
-            .fetch_all(&self.pool)
-            .await
-            .unwrap_or_else(|e| {
-                eprintln!("Ошибка при получении всех задач: {:?}", e);
-                Vec::new()
-            })
+        .fetch_all(&self.pool)
+        .await
+        .unwrap_or_else(|e| {
+            eprintln!("Ошибка при получении всех задач: {:?}", e);
+            Vec::new()
+        })
     }
-
-    async fn get_by_id(&self, id: TaskId) -> Result<Task, RepositoryError> {
-        let task = sqlx::query_as!(Task, r#"SELECT id as "id!", title as "title!", description as "description!", status as "status!" FROM tasks WHERE id = ?"#, id)
-            .fetch_optional(&self.pool)
-            .await
-            .map_err(|e| {
-                eprintln!("Ошибка при получении задачи по ID: {:?}", e);
-                RepositoryError::InternalError
-            })?;
-        task.ok_or(RepositoryError::TaskNotFound)
-    }
-
+    
     async fn create(&mut self, task: Task) -> Result<(), RepositoryError> {
         sqlx::query!(
             r#"INSERT INTO tasks (id, title, description, status) VALUES (?, ?, ?, ?)"#,
-            task.id,
-            task.title,
-            task.description,
-            task.status
+            task.id, task.title, task.description, task.status
         )
         .execute(&self.pool)
         .await
@@ -75,6 +56,21 @@ impl TaskRepository for SqliteTaskRepository {
             }
         })?;
         Ok(())
+    }
+    async fn get_by_id(&self, id: TaskId) -> Result<Task, RepositoryError> {
+        let task = sqlx::query_as!(Task, r#"SELECT id as "id!", title as "title!", description as "description!", status as "status!" FROM tasks WHERE id = ?"#, id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| {
+            eprintln!("Ошибка при получении задачи по ID: {:?}", e);
+            RepositoryError::InternalError
+        })?;
+        task.ok_or(RepositoryError::TaskNotFound)
+    }
+    
+    async fn next_id(&mut self) -> TaskId {
+        self.last_id += 1;
+        self.last_id
     }
 
     async fn delete(&mut self, id: TaskId) -> Result<(), RepositoryError> {
@@ -117,10 +113,8 @@ impl TaskRepository for SqliteTaskRepository {
 #[cfg(test)]
 mod sqlite_task_repository_tests {
     use std::path::Path;
-
     use sqlx::SqlitePool;
     use sqlx::migrate::Migrator;
-
     use crate::domain::entities::Task;
     use crate::domain::repositories::{RepositoryError, TaskRepository};
     use crate::infrastructure::sqlite::SqliteTaskRepository;
@@ -146,18 +140,8 @@ mod sqlite_task_repository_tests {
         let pool = setup_db().await;
         let mut repo = SqliteTaskRepository::new(pool).await;
 
-        let task1 = Task {
-            id: repo.next_id().await,
-            title: "Task 1".to_string(),
-            description: "Desc 1".to_string(),
-            status: false,
-        };
-        let task2 = Task {
-            id: repo.next_id().await,
-            title: "Task 2".to_string(),
-            description: "Desc 2".to_string(),
-            status: true,
-        };
+        let task1 = Task { id: repo.next_id().await, title: "Task 1".to_string(), description: "Desc 1".to_string(), status: false };
+        let task2 = Task { id: repo.next_id().await, title: "Task 2".to_string(), description: "Desc 2".to_string(), status: true };
 
         repo.create(task1.clone()).await.unwrap();
         repo.create(task2.clone()).await.unwrap();
@@ -166,6 +150,15 @@ mod sqlite_task_repository_tests {
         assert_eq!(all_tasks.len(), 2);
         assert!(all_tasks.contains(&task1));
         assert!(all_tasks.contains(&task2));
+    }
+
+    #[tokio::test]
+    async fn get_by_id_non_existing_task() {
+        // Проверяем получение несуществующей задачи по ID
+        let pool = setup_db().await;
+        let repo = SqliteTaskRepository::new(pool).await;
+        let result = repo.get_by_id(99).await;
+        assert!(matches!(result, Err(RepositoryError::TaskNotFound)));
     }
 
     #[tokio::test]
@@ -185,15 +178,6 @@ mod sqlite_task_repository_tests {
         let fetched_task = repo.get_by_id(task.id).await.unwrap();
         assert_eq!(fetched_task.id, task.id);
         assert_eq!(fetched_task.title, "Test Task");
-    }
-
-    #[tokio::test]
-    async fn get_by_id_non_existing_task() {
-        // Проверяем получение несуществующей задачи по ID
-        let pool = setup_db().await;
-        let repo = SqliteTaskRepository::new(pool).await;
-        let result = repo.get_by_id(99).await;
-        assert!(matches!(result, Err(RepositoryError::TaskNotFound)));
     }
 
     #[tokio::test]
